@@ -22,7 +22,7 @@
 # System
 import locale
 import types
-import formatter
+#import formatter
 import sys
 import io
 import inspect
@@ -133,37 +133,38 @@ class LocalText(dict):
         else:
             errs.append(_("Tag should have at least the current locale, or failing that an English or Turkish version"))
 
-    #FIXME: factor out these common routines
-    def print_text(self, file = sys.stdout):
-        w = Writer(file) # plain text
-        f = formatter.AbstractFormatter(w)
+    # FIXME: factor out these common routines
+    def print_text(self, file=sys.stdout):
+        # Writer sınıfı yerine direkt dosyaya yazıyoruz
+        w = Writer(file)  # Writer sınıfı, dosyaya yazmayı yönetir
         errs = []
-        self.format(f, errs)
+        self.format(w, errs)  # Burada formatlama işlemi yapılıyor
         if errs:
             for x in errs:
-                ctx.ui.warning(x)
+                ctx.ui.warning(x)  # Hataları uyarı olarak gösterir
 
     def __str__(self):
-        L = LocalText.get_lang()
+        L = LocalText.get_lang()  # Dil seçimi
         if L in self:
-            return str(self[L])
+            return str(self[L])  # Dil seçimine uygun metni döndür
         elif 'en' in self:
-            # fallback to English, blah
+            # Fallback to English
             return str(self['en'])
         elif 'tr' in self:
-            # fallback to Turkish
+            # Fallback to Turkish
             return str(self['tr'])
         else:
-            return str()
+            return ""  # Boş string döndür
 
-class Writer(formatter.DumbWriter):
+class Writer:
     """adds unicode support"""
 
     def __init__(self, file=None, maxcol=78):
-        formatter.DumbWriter.__init__(self, file, maxcol)
+        self.file = file if file is not None else sys.stdout  # Varsayılan olarak sys.stdout kullanılır
+        self.maxcol = maxcol
+        self.col = 0  # Sütun sayısı
 
     def send_literal_data(self, data):
-        print(data)
         self.file.write(data) # .encode("utf-8"))
         i = data.rfind('\n')
         if i >= 0:
@@ -383,9 +384,10 @@ class autoxml(oo.autosuper, oo.autoprop):
         cls.format = format
         def print_text(self, file = sys.stdout):
             w = Writer(file) # plain text
-            f = formatter.AbstractFormatter(w)
+            #f = formatter.AbstractFormatter(w)
             errs = []
-            self.format(f, errs)
+            #self.format(f, errs)
+            self.format(w, errs)
             if errs:
                 for x in errs:
                     ctx.ui.warning(x)

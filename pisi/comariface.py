@@ -12,6 +12,7 @@
 
 import gettext
 import os
+import re
 import string
 import time
 
@@ -31,32 +32,30 @@ try:
     # import py3comar as comar
     import comar
     import dbus
-except ImportError:
-    raise Error(_("comar-api package is not fully installed"))
-
+except ImportError as e:
+    raise Error(_("Required module is missing: %s") % str(e))
 
 def is_char_valid(char):
     """Test if char is valid object path character."""
-    return char in string.ascii_letters + string.digits + "_"
+    #return char in string.ascii_letters + string.digits + "_"
+    return bool(re.match(r'^[\w]+$', char, re.UNICODE))
 
 
 def is_method_missing(exception):
     """Tells if exception is about missing method in COMAR script"""
-    if exception._dbus_error_name in ("tr.org.pardus.comar.python.missing",
-                                      "tr.org.pardus.comar.Missing"):
+    error_name = getattr(exception, "_dbus_error_name", None)
+    if error_name in ("tr.org.pardus.comar.python.missing",
+                      "tr.org.pardus.comar.Missing"):
         return True
     return False
 
 
 def safe_script_name(package):
     """Generates DBus-safe object name for package script names."""
-    object = package
-    for char in package:
-        if not is_char_valid(char):
-            object = object.replace(char, '_')
-    if object[0].isdigit():
-        object = '_%s' % object
-    return object
+    object_name = ''.join(char if is_char_valid(char) else '_' for char in package)
+    if object_name[0].isdigit():
+        object_name = f"_{object_name}"
+    return object_name
 
 
 def get_link():
@@ -87,10 +86,11 @@ def get_link():
             link = comar.Link(socket=sockname, alternate=alternate)
             link.setLocale()
             return link
-        except dbus.DBusException as e:
-            exceptions.append(str(e))
+        #except dbus.DBusException as e:
+            #exceptions.append(str(e))
         except Exception as e:
-            exceptions.append(str(e))
+            ctx.ui.debug(f"Retrying to connect to COMAR... Remaining time: {timeout:.1f}s")
+            #exceptions.append(str(e))
         time.sleep(0.2)
         timeout -= 0.2
     raise Error(_("Cannot connect to COMAR: \n  %s\n")
@@ -146,9 +146,9 @@ def post_install(package_name, provided_scripts,
 
     if self_post:
         if not fromVersion:
-            fromVersion = ""
+            fromVersion = fromVersion or ""
         if not fromRelease:
-            fromRelease = ""
+            fromRelease = fromRelease or ""
 
         ctx.ui.debug(_("Running package's post install script"))
         try:
@@ -180,7 +180,7 @@ def pre_remove(package_name, metapath, filepath):
                 raise Error(_("Script error: %s") % exception)
 
     ctx.ui.debug(_("Calling pre remove handlers"))
-    for handler in list(link.System.PackageHandler):
+    for handler in link.System.PackageHandler:
         try:
             link.System.PackageHandler[handler].cleanupPackage(
                     metapath, filepath, timeout=ctx.dbus_timeout)
@@ -212,7 +212,7 @@ def post_remove(package_name, metapath, filepath, provided_scripts=[]):
                 raise Error(_("Script error: %s") % exception)
 
     ctx.ui.debug(_("Calling post remove handlers"))
-    for handler in list(link.System.PackageHandler):
+    for handler in link.System.PackageHandler:
         try:
             link.System.PackageHandler[handler].postCleanupPackage(
                     metapath, filepath, timeout=ctx.dbus_timeout)

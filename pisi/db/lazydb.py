@@ -88,9 +88,9 @@ class LazyDB(Singleton):
             try:
                 # self._instance().__dict__ = pickle.load(open(self.__cache_file(), 'rb'), encoding="latin-1") # TODO: daha iyi bir encoding seçilmeli
                 try:
-                    self._instance().__dict__ = pickle.load(open(self.__cache_file(), 'rb'), encoding="utf-8")
+                    self._instance().__dict__ = pickle.load(open(self.__cache_file(), 'rb'), encoding="latin-1")
                 except:
-                    self._instance().__dict__ = pickle.load(open(self.__cache_file(), 'rb'))
+                    self._instance().__dict__ = pickle.load(open(self.__cache_file(), 'rb'), encoding="utf-8")
                     # latin-1 ile okut sonra json ile çevir
                     # a=pickle.load(open("/var/cache/pisi/packagedb.cache", "rb"), encoding="latin-1")
                     # str(a).encode("utf-8")

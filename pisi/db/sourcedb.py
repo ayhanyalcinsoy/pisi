@@ -11,7 +11,7 @@
 #
 
 import re
-import gzip
+import zlib
 
 import piksemel
 
@@ -46,7 +46,7 @@ class SourceDB(lazydb.LazyDB):
 
         for spec in doc.tags("SpecFile"):
             src_name = spec.getTag("Source").getTagData("Name")
-            sources[src_name] = gzip.zlib.compress(spec.toString())
+            sources[src_name] = zlib.compress(spec.toString().encode('utf-8'))
             for package in spec.tags("Package"):
                 pkgstosrc[package.getTagData("Name")] = src_name
 

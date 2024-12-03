@@ -44,8 +44,8 @@ class ItemByRepo:
             if r in self.dbobj and item in self.dbobj[r]:
                 if self.compressed:
                     try:
-                        # return gzip.zlib.decompress(self.dbobj[r][item].encode("latin-1")), r
                         return gzip.zlib.decompress(self.dbobj[r][item].encode("utf-8")), r
+                        #return gzip.zlib.decompress(self.dbobj[r][item]), r
                     except:
                         # try:
                         return gzip.zlib.decompress(self.dbobj[r][item]), r

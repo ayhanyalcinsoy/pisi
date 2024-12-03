@@ -91,11 +91,11 @@ class Index(xmlfile.XmlFile, metaclass=autoxml.autoxml):
         deltas = {}
 
         pkgs_sorted = False
-        for fn in os.walk(repo_uri).next()[2]:
+        for fn in next(os.walk(repo_uri))[2]:
             if fn.endswith(ctx.const.delta_package_suffix) or fn.endswith(ctx.const.package_suffix):
                 pkgpath = os.path.join(repo_uri,
                                        util.parse_package_dir_path(fn))
-                if not os.path.isdir(pkgpath): os.makedirs(pkgpath)
+                if not os.path.isdir(pkgpath): os.makedirs(pkgpath, exist_ok=True)
                 ctx.ui.info("%-80.80s\r" % (_('Sorting: %s ') %
                     fn), noln = False if ctx.config.get_option("verbose") else True)
                 shutil.copy2(os.path.join(repo_uri, fn), pkgpath)

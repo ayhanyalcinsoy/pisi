@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2005 - 2007, TUBITAK/UEKAE
@@ -163,7 +163,7 @@ setup(name="pisi",
     description="PiSi (Packages Installed Successfully as Intended)",
     long_description="PiSi is the package management system of Pisi Linux.",
     license="GNU GPL2",
-    author="Pisi Linux Developers",
+    author="Pisi GNU/Linux Developers",
     author_email="admins@pisilinux.org",
     url="https://github.com/pisilinux/project/tree/master/pisi",
     #package_dir = {'': ''},

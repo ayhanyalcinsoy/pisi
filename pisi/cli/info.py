@@ -104,10 +104,13 @@ Usage: info <package1> <package2> ... <packagen>
         if arg.endswith(ctx.const.package_suffix):
             self.pisifile_info(arg)
             return
-
+        print("="*50)
         self.installdb_info(arg)
+        print("="*50)
         self.packagedb_info(arg)
+        print("="*50)
         self.sourcedb_info(arg)
+        print("="*50)
 
     def print_files(self, files):
         files.list.sort(key = lambda x:x.path)
@@ -136,7 +139,7 @@ Usage: info <package1> <package2> ... <packagen>
             ctx.ui.formatted_output(str(spec))
             if sourcedb:
                 revdeps =  [name for name, dep in sourcedb.get_rev_deps(spec.source.name)]
-                print((_('Reverse Build Dependencies:'), util.strlist(revdeps)))
+                print(_('Reverse Build Dependencies:'), util.strlist(revdeps))
                 print()
 
     def pisifile_info(self, package):

@@ -45,9 +45,9 @@ class FilesLDB ():
 
     def get_file(self, path):
         try:
-            return self.filesdb.get(hashlib.md5(path.encode("utf-8")).digest()).decode("utf-8"), path
+            return self.filesdb.get(hashlib.md5(path.encode("latin-1")).digest()).decode("latin-1"), path
         except:
-            return self.filesdb.get(hashlib.md5(path.encode("utf-8")).digest()), path
+            return self.filesdb.get(hashlib.md5(path.encode("latin-1")).digest()), path
 
     def search_file(self, term):
         pkg, path = self.get_file(term)

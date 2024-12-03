@@ -9,12 +9,11 @@
 #
 # Please read the COPYING file.
 
-# Standard Python modules
+# standard python modules
 import os
 import glob
-import gettext
 
-# Gettext setup
+import gettext
 __trans = gettext.translation('pisi', fallback=True)
 _ = __trans.gettext
 
@@ -27,75 +26,64 @@ import pisi.actionsapi.get as get
 from pisi.actionsapi.shelltools import system, can_access_file, unlink, isEmpty
 from pisi.actionsapi.pisitools import dodoc
 
-
-# Custom error classes
 class ConfigureError(pisi.actionsapi.Error):
     def __init__(self, value=''):
-        super().__init__(value)
+        pisi.actionsapi.Error.__init__(self, value)
+        self.value = value
         ctx.ui.error(value)
-
 
 class CompileError(pisi.actionsapi.Error):
     def __init__(self, value=''):
-        super().__init__(value)
+        pisi.actionsapi.Error.__init__(self, value)
+        self.value = value
         ctx.ui.error(value)
-
 
 class InstallError(pisi.actionsapi.Error):
     def __init__(self, value=''):
-        super().__init__(value)
+        pisi.actionsapi.Error.__init__(self, value)
+        self.value = value
         ctx.ui.error(value)
-
 
 class RunTimeError(pisi.actionsapi.Error):
     def __init__(self, value=''):
-        super().__init__(value)
+        pisi.actionsapi.Error.__init__(self, value)
+        self.value = value
         ctx.ui.error(value)
 
-
-# Functions
-def configure(parameters='', pyVer='3'):
-    """Runs python setup.py configure."""
-    if system(f'python{pyVer} -m build --wheel --no-isolation configure {parameters}'):
+def configure(parameters = '', pyVer = ''):
+    '''does python setup.py configure'''
+    if system('python%s setup.py configure %s' % (pyVer, parameters)):
         raise ConfigureError(_('Configuration failed.'))
 
 
-def compile(parameters='', pyVer='3'):
-    """Compiles source with the given parameters."""
-    if system(f'python{pyVer} -m build --wheel --no-isolation {parameters}'):
+def compile(parameters = '', pyVer = ''):
+    '''compile source with given parameters.'''
+    if system('python%s setup.py build %s' % (pyVer, parameters)):
         raise CompileError(_('Make failed.'))
 
-
-def install(parameters='', pyVer='3'):
-    """Installs the built package."""
-    if system(f'python{pyVer} -m installer --destdir={get.installDIR()} dist/*.whl {parameters}'):
+def install(parameters = '', pyVer = ''):
+    '''does python setup.py install'''
+    if system('python%s setup.py install --root=%s --no-compile -O0 %s' % (pyVer, get.installDIR(), parameters)):
         raise InstallError(_('Install failed.'))
 
-    # Handle documentation files
-    docFiles = (
-        'AUTHORS', 'CHANGELOG', 'CONTRIBUTORS', 'COPYING*', 'COPYRIGHT',
-        'Change*', 'KNOWN_BUGS', 'LICENSE', 'MAINTAINERS', 'NEWS',
-        'README*', 'PKG-INFO'
-    )
+    docFiles = ('AUTHORS', 'CHANGELOG', 'CONTRIBUTORS', 'COPYING*', 'COPYRIGHT',
+                'Change*', 'KNOWN_BUGS', 'LICENSE', 'MAINTAINERS', 'NEWS',
+                'README*', 'PKG-INFO')
 
     for docGlob in docFiles:
         for doc in glob.glob(docGlob):
             if not isEmpty(doc):
                 dodoc(doc)
 
-
-def run(parameters='', pyVer='3'):
-    """Executes the given parameters with Python."""
-    if system(f'python{pyVer} {parameters}'):
+def run(parameters = '', pyVer = ''):
+    '''executes parameters with python'''
+    if system('python%s %s' % (pyVer, parameters)):
         raise RunTimeError(_('Running %s failed.') % parameters)
 
-
-def fixCompiledPy(lookInto=f'/usr/lib/{get.curPYTHON()}/'):
-    """Removes .py[co] files from packages."""
-    install_dir = get.installDIR()
-    for root, dirs, files in os.walk(f'{install_dir}/{lookInto}'):
+def fixCompiledPy(lookInto = '/usr/lib/%s/' % get.curPYTHON()):
+    ''' cleans *.py[co] from packages '''
+    for root, dirs, files in os.walk('%s/%s' % (get.installDIR(),lookInto)):
         for compiledFile in files:
             if compiledFile.endswith('.pyc') or compiledFile.endswith('.pyo'):
-                file_path = os.path.join(root, compiledFile)
-                if can_access_file(file_path):
-                    unlink(file_path)
+                if can_access_file('%s/%s' % (root,compiledFile)):
+                    unlink('%s/%s' % (root,compiledFile))

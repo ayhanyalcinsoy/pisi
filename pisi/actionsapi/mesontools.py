@@ -6,37 +6,37 @@ import pisi.context as ctx
 from pisi.actionsapi import get
 from pisi.actionsapi.shelltools import system
 
+# gettext setup
 __trans = gettext.translation('pisi', fallback=True)
-_ = __trans.ugettext
+_ = __trans.gettext
 
 
+# Custom error classes
 class ConfigureError(pisi.actionsapi.Error):
     def __init__(self, value=''):
-        pisi.actionsapi.Error.__init__(self, value)
-        self.value = value
+        super().__init__(value)
         ctx.ui.error(value)
 
 
 class CompileError(pisi.actionsapi.Error):
     def __init__(self, value=''):
-        pisi.actionsapi.Error.__init__(self, value)
-        self.value = value
+        super().__init__(value)
         ctx.ui.error(value)
 
 
 class InstallError(pisi.actionsapi.Error):
     def __init__(self, value=''):
-        pisi.actionsapi.Error.__init__(self, value)
-        self.value = value
+        super().__init__(value)
         ctx.ui.error(value)
 
 
+# Functions
 def configure(parameters='', build_dir='build'):
     """
     Configures the project into the build directory with the parameters using meson.
 
     Args:
-        parameters (str): Extra parameters for the command. Default is empty string.
+        parameters (str): Extra parameters for the command. Default is an empty string.
         build_dir (str): Build directory. Default is 'build'.
 
     Examples:
@@ -60,17 +60,16 @@ def configure(parameters='', build_dir='build'):
         '--sysconfdir=/etc',
         '--default-library=shared',
     ])
-    if system('meson setup %s %s %s' % (default_parameters, parameters, build_dir)):
+    if system(f'meson setup {default_parameters} {parameters} {build_dir}'):
         raise ConfigureError(_('Configuration failed.'))
 
 
 def build(parameters='', build_dir='build'):
     """
-    Builds the project into the build directory with the parameters using ninja. Instead of letting ninja
-    to detect number of cores, this function gets the number from PISI configurations.
+    Builds the project into the build directory with the parameters using ninja.
 
     Args:
-        parameters (str): Extra parameters for the command. Default is empty string.
+        parameters (str): Extra parameters for the command. Default is an empty string.
         build_dir (str): Build directory. Default is 'build'.
 
     Examples:
@@ -78,7 +77,7 @@ def build(parameters='', build_dir='build'):
         >>> mesontools.build('extra parameters')
         >>> mesontools.build('extra parameters', 'custom_build_dir')
     """
-    if system('ninja -C %s %s %s' % (build_dir, parameters, get.makeJOBS())):
+    if system(f'ninja -C {build_dir} {parameters} {get.makeJOBS()}'):
         raise CompileError(_('Make failed.'))
 
 
@@ -87,7 +86,7 @@ def install(parameters='', build_dir='build'):
     Installs the project to the destination directory.
 
     Args:
-        parameters (str): Extra parameters for the command. Default is empty string.
+        parameters (str): Extra parameters for the command. Default is an empty string.
         build_dir (str): Build directory. Default is 'build'.
 
     Examples:
@@ -95,5 +94,5 @@ def install(parameters='', build_dir='build'):
         >>> mesontools.install('extra parameters')
         >>> mesontools.install('extra parameters', 'custom_build_dir')
     """
-    if system('DESTDIR=%s ninja -C %s %s install' % (get.installDIR(), build_dir, parameters, )):
+    if system(f'DESTDIR={get.installDIR()} ninja -C {build_dir} {parameters} install'):
         raise InstallError(_('Install failed.'))

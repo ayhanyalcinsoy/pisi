@@ -209,45 +209,69 @@ class File:
         "returns the underlying file object"
         return self.__file__
 
-    def close(self, delete_transfer = False):
-        "this method must be called at the end of operation"
+    def close(self, delete_transfer=False):
+        """
+        Bu yöntem işlemin sonunda çağrılmalıdır.
+        """
         self.__file__.close()
+
         if self.mode == File.write:
             compressed_files = []
             ctypes = self.compress or 0
+
+            # XZ Sıkıştırma
             if ctypes & File.COMPRESSION_TYPE_XZ:
                 import lzma
                 compressed_file = self.localfile + ".xz"
                 compressed_files.append(compressed_file)
-                options = {"level": 9}
-                lzma_file = lzma.LZMAFile(compressed_file, "w",
-                                          options=options)
-                lzma_file.write(open(self.localfile, "r").read())
-                lzma_file.close()
+                options = {"preset": 9}  # Modern `lzma` modülü için ayar
+                with open(self.localfile, "rb") as source_file, lzma.open(compressed_file, "wb", **options) as lzma_file:
+                    lzma_file.write(source_file.read())
 
+            # BZ2 Sıkıştırma
             if ctypes & File.COMPRESSION_TYPE_BZ2:
                 import bz2
                 compressed_file = self.localfile + ".bz2"
                 compressed_files.append(compressed_file)
-                bz2.BZ2File(compressed_file, "w").write(open(self.localfile, "r").read())
+                with open(self.localfile, "rb") as source_file, bz2.open(compressed_file, "wb") as bz2_file:
+                    bz2_file.write(source_file.read())
 
+            # SHA1 Kontrolü
             if self.sha1sum:
-                sha1 = pisi.util.sha1_file(self.localfile)
-                cs = open(self.localfile + '.sha1sum', 'w')
-                cs.write(sha1)
-                cs.close()
-                for compressed_file in compressed_files:
-                    sha1 = pisi.util.sha1_file(compressed_file)
-                    cs = open(compressed_file + '.sha1sum', 'w')
-                    cs.write(sha1)
-                    cs.close()
+                import hashlib
 
-            if self.sign==File.detached:
-                if pisi.util.run_batch('gpg --detach-sig ' + self.localfile)[0]:
-                    raise Error(_("ERROR: gpg --detach-sig %s failed") % self.localfile)
+                def sha1_file(filepath):
+                    with open(filepath, "rb") as f:
+                        sha1 = hashlib.sha1()
+                        while chunk := f.read(8192):
+                            sha1.update(chunk)
+                        return sha1.hexdigest()
+
+                # Yerel dosya için SHA1
+                sha1 = sha1_file(self.localfile)
+                with open(self.localfile + '.sha1sum', 'w') as cs:
+                    cs.write(sha1)
+
+                # Sıkıştırılmış dosyalar için SHA1
                 for compressed_file in compressed_files:
-                    if pisi.util.run_batch('gpg --detach-sig ' + compressed_file)[0]:
-                        raise Error(_("ERROR: gpg --detach-sig %s failed") % compressed_file)
+                    sha1 = sha1_file(compressed_file)
+                    with open(compressed_file + '.sha1sum', 'w') as cs:
+                        cs.write(sha1)
+
+            # GPG İmzalama
+            if self.sign == File.detached:
+                def sign_file(filepath):
+                    command = f'gpg --detach-sig {filepath}'
+                    if pisi.util.run_batch(command)[0]:
+                        raise Error(_("ERROR: gpg --detach-sig %s failed") % filepath)
+
+                # Yerel dosya için imzalama
+                sign_file(self.localfile)
+
+                # Sıkıştırılmış dosyalar için imzalama
+                for compressed_file in compressed_files:
+                    sign_file(compressed_file)
+
 
     @staticmethod
     def check_signature(uri, transfer_dir, sign=detached):
